@@ -1,11 +1,15 @@
 {
-  "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "target": "ES2023",
-    "strict": true,
-    "allowSyntheticDefaultImports": true,
-    "outDir": "dist",
-    "esModuleInterop": true,
-  }
+	"compilerOptions": {
+		"target": "ES2020",
+		"module": "ESNext",
+		"moduleResolution": "NodeNext",
+		"esModuleInterop": true,
+		"strict": true,
+		"skipLibCheck": true,
+		"outDir": "./dist",
+		"rootDir": "./src",
+		"sourceMap": true
+	},
+	"include": ["src/**/*"],
+	"exclude": ["node_modules"]
 }
