@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String       @id @default(cuid())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  name        String?
+  email       String       @unique
+  password    String
+  restaurants Restaurant[]
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  slug        String   @unique
+  name        String
+  address     String
+  phone       String
+  description String?
+  logoUrl     String?
+  logoPath    String? 
+  bannerUrl   String?
+  bannerPath  String?
+  isActive    Boolean  @default(true)
+
+  categories Category[]
+  products   Product[]
+  settings   RestaurantSettings?
+  metrics    ProductMetric[]
+
+  @@index([userId])
+}
+
+model RestaurantSettings {
+  id             String     @id @default(cuid())
+  restaurantId   String     @unique
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  taxPercentage  Float      @default(0.0)
+  minOrderAmount Float      @default(0.0)
+  isOpen         Boolean    @default(true)
+
+  showPrice  Boolean    @default(true)
+  showImage  Boolean    @default(true)
+  layoutType LayoutType @default(GRID)
+
+  openingHours OpeningHour[]
+}
+
+enum LayoutType {
+  GRID
+  LIST
+}
+
+model OpeningHour {
+  id         String             @id @default(cuid())
+  settingsId String
+  settings   RestaurantSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int
+  opensAt    String
+  closesAt   String
+  isOpen     Boolean            @default(true)
+
+  @@unique([settingsId, dayOfWeek])
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  name         String
+  description  String?
+  orderIndex   Int
+  isActive     Boolean    @default(true)
+  products     Product[]
+
+  @@unique([restaurantId, name])
+  @@index([restaurantId])
+}
+
+model Product {
+  id           String     @id @default(cuid())
+  restaurantId String
+  categoryId   String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  name         String
+  description  String?
+  price        Float
+  imageUrl     String?
+  isAvailable  Boolean    @default(true)
+
+  variantCategories VariantCategory[]
+  addOnCategories   AddOnCategory[]
+  metrics           ProductMetric?
+
+  @@unique([restaurantId, categoryId, name])
+  @@index([restaurantId])
+  @@index([categoryId])
+}
+
+model VariantCategory {
+  id         String    @id @default(cuid())
+  productId  String
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  name       String
+  isRequired Boolean   @default(false)
+  orderIndex Int
+  isActive   Boolean   @default(true)
+  variants   Variant[]
+
+  @@unique([productId, name])
+  @@index([productId])
+}
+
+model Variant {
+  id                String          @id @default(cuid())
+  variantCategoryId String
+  variantCategory   VariantCategory @relation(fields: [variantCategoryId], references: [id], onDelete: Cascade)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  name              String
+  priceModifier     Float           @default(0.0)
+  isActive          Boolean         @default(true)
+
+  @@index([variantCategoryId])
+}
+
+model AddOnCategory {
+  id            String   @id @default(cuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  name          String
+  isRequired    Boolean  @default(false)
+  minSelections Int      @default(0)
+  maxSelections Int?
+  orderIndex    Int
+  isActive      Boolean  @default(true)
+  addOns        AddOn[]
+
+  @@unique([productId, name])
+  @@index([productId])
+}
+
+model AddOn {
+  id              String        @id @default(cuid())
+  addOnCategoryId String
+  addOnCategory   AddOnCategory @relation(fields: [addOnCategoryId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  name            String
+  price           Float
+  isActive        Boolean       @default(true)
+
+  @@index([addOnCategoryId])
+}
+
+model ProductMetric {
+  id           String     @id @default(cuid())
+  restaurantId String
+  productId    String     @unique
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  views          Int   @default(0)
+  addedToCart    Int   @default(0)
+  conversionRate Float @default(0.0)
+
+  lastViewedAt DateTime?
+  lastAddedAt  DateTime?
+
+  @@index([restaurantId])
+  @@index([views])
+  @@index([addedToCart])
+}
